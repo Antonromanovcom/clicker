@@ -1,6 +1,11 @@
 package dev.awake.cli;
 
 import java.io.PrintStream;
+import java.time.Clock;
+import dev.awake.scheduling.AwakeScheduler;
+import dev.awake.scheduling.ExecutionScheduler;
+import dev.awake.scheduling.TimeWindow;
+import dev.awake.scheduling.TimeWindowResolver;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
@@ -10,13 +15,20 @@ public final class AwakeApplication {
     }
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out, System.err);
+        Clock clock = Clock.systemDefaultZone();
+        int exitCode = run(args, System.out, System.err, clock, new AwakeScheduler(clock));
         if (exitCode != ExitCode.SUCCESS) {
             System.exit(exitCode);
         }
     }
 
     static int run(String[] args, PrintStream out, PrintStream err) {
+        Clock clock = Clock.systemDefaultZone();
+        return run(args, out, err, clock, new AwakeScheduler(clock));
+    }
+
+    static int run(String[] args, PrintStream out, PrintStream err,
+                   Clock clock, ExecutionScheduler scheduler) {
         try {
             ParseResult result = new CliParser().parse(args);
             if (result.getAction() == ParseResult.Action.HELP) {
@@ -29,10 +41,9 @@ public final class AwakeApplication {
             }
 
             CliOptions options = result.getOptions();
+            TimeWindow window = new TimeWindowResolver(clock).resolve(options);
             out.println("Awake " + VERSION);
-            out.println("Mode: " + options.getMode().cliValue());
-            out.println("Configuration accepted. This mode is not implemented yet.");
-            return ExitCode.SUCCESS;
+            return scheduler.execute(options, window, out);
         } catch (CliException exception) {
             err.println("Error: " + exception.getMessage());
             err.println("Run with --help for usage.");
@@ -58,4 +69,3 @@ public final class AwakeApplication {
         out.println("The inhibit and activity behaviors are not implemented yet.");
     }
 }
-
