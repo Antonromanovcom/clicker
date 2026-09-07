@@ -24,6 +24,9 @@ public final class ModeFactory implements ModeProvider {
                 ? new ActivityPlaceholderMode(platform, options.getTarget(), options.getIntervalSeconds(),
                         options.getEraseAfter(), options.isDryRun())
                 : new MacOsTextEditActivityMode(options.getTarget(), options.getEraseAfter());
+        if (!options.isDryRun()) {
+            activity = new TargetLockedMode(options.getTarget(), activity);
+        }
         if (options.isDryRun() || options.isInhibitDisabled()) {
             return activity;
         }

@@ -34,6 +34,7 @@ java -jar target/awake.jar --mode activity --hours 2 --target "/tmp/awake.txt"
 java -jar target/awake.jar --mode activity --from 20:00 --until 23:30 --target "/tmp/awake.txt" --interval 30
 java -jar target/awake.jar --mode activity --hours 4 --target "/tmp/awake.txt" --no-inhibit --erase-after 100
 java -jar target/awake.jar --mode activity --hours 1 --target "/tmp/awake.txt" --dry-run
+java -jar target/awake.jar --mode inhibit --hours 4 --log-level quiet
 ```
 
 `--hours` принимает положительное целое число. Время задаётся в 24-часовом формате `HH:mm`. Параметр `--from` используется только вместе с `--until`. Для `activity` параметр `--target` обязателен.
@@ -52,6 +53,9 @@ java -jar target/awake.jar --mode activity --hours 1 --target "/tmp/awake.txt" -
 - Для синтетического ввода macOS может запросить разрешение Accessibility/Automation для Java или терминала, из которого запущен JAR.
 
 Подробные ограничения описаны в [ACTIVITY-SAFETY.md](ACTIVITY-SAFETY.md).
+Системные разрешения и платформенные ограничения описаны в [PERMISSIONS.md](PERMISSIONS.md).
+
+Уровни вывода задаются через `--log-level quiet|normal|verbose`. В журналах не печатаются полный путь target, заголовок окна или содержимое документа.
 
 ## Коды завершения
 

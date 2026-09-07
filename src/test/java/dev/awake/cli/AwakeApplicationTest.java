@@ -39,6 +39,15 @@ class AwakeApplicationTest {
         assertTrue(!output.stdout.contains("Scheduler accepted"));
     }
 
+    @Test
+    void quietDryRunProducesNoStandardOutput() {
+        Output output = run("--mode", "activity", "--hours", "1",
+                "--target", "/tmp/awake.txt", "--dry-run", "--log-level", "quiet");
+
+        assertEquals(ExitCode.SUCCESS, output.code);
+        assertEquals("", output.stdout);
+    }
+
     private Output run(String... args) {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();

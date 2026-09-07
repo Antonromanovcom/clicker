@@ -15,7 +15,7 @@ import dev.awake.mode.WakefulnessMode;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
-    public static final String VERSION = "0.6.0-SNAPSHOT";
+    public static final String VERSION = "0.7.0-SNAPSHOT";
     private static final DateTimeFormatter DISPLAY_TIME =
             DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss VV");
 
@@ -53,9 +53,13 @@ public final class AwakeApplication {
             CliOptions options = result.getOptions();
             TimeWindow window = new TimeWindowResolver(clock).resolve(options);
             WakefulnessMode mode = modeProvider.create(options);
-            out.println("Awake " + VERSION);
+            if (options.getLogLevel() != LogLevel.QUIET) {
+                out.println("Awake " + VERSION);
+            }
             if (options.isDryRun()) {
-                printDryRun(window, mode, out);
+                if (options.getLogLevel() != LogLevel.QUIET) {
+                    printDryRun(window, mode, out);
+                }
                 return ExitCode.SUCCESS;
             }
             return scheduler.execute(options, window, mode, out);
@@ -91,6 +95,7 @@ public final class AwakeApplication {
         out.println("  --no-inhibit        Activity: do not also block system sleep");
         out.println("  --erase-after <N>   Activity: erase each batch of N typed characters (max: 100)");
         out.println("  --dry-run           Activity: validate and report actions without system effects");
+        out.println("  --log-level <level> Logging: quiet, normal (default), or verbose");
         out.println("  --help              Show this help and exit");
         out.println("  --version           Show version and exit");
         out.println();

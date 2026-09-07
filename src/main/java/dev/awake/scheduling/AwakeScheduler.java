@@ -2,6 +2,7 @@ package dev.awake.scheduling;
 
 import dev.awake.cli.CliOptions;
 import dev.awake.cli.ExitCode;
+import dev.awake.cli.LogLevel;
 import dev.awake.mode.ModeException;
 import dev.awake.mode.WakefulnessMode;
 import java.io.PrintStream;
@@ -38,30 +39,31 @@ public final class AwakeScheduler implements ExecutionScheduler {
         Thread shutdownHook = new Thread(() -> {
             cancellation.cancel();
             stopMode(mode, out);
-            out.println("Stopped: JVM shutdown requested (for example, Ctrl+C).");
+            log(options, out, LogLevel.NORMAL,
+                    "Stopped: JVM shutdown requested (for example, Ctrl+C).");
         }, "awake-shutdown");
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         try {
             printPlan(options, window, mode, out);
             if (!waitForStart(window, cancellation)) {
-                out.println("Stopped before start: interrupted by user.");
+                log(options, out, LogLevel.NORMAL, "Stopped before start: interrupted by user.");
                 return ExitCode.INTERRUPTED;
             }
 
             mode.start();
-            out.println("Started: " + mode.description() + ".");
+            log(options, out, LogLevel.NORMAL, "Started: " + mode.description() + ".");
             if (!waitActiveDuration(window.getActiveDuration(), options.getIntervalSeconds(), mode, cancellation)) {
-                out.println("Stopped: interrupted by user.");
+                log(options, out, LogLevel.NORMAL, "Stopped: interrupted by user.");
                 return ExitCode.INTERRUPTED;
             }
-            out.println("Finished: planned time window completed.");
+            log(options, out, LogLevel.NORMAL, "Finished: planned time window completed.");
             return ExitCode.SUCCESS;
         } catch (ModeException exception) {
             out.println("Mode error: " + exception.getMessage());
             return ExitCode.PLATFORM_ERROR;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            out.println("Stopped: thread interrupted.");
+            log(options, out, LogLevel.NORMAL, "Stopped: thread interrupted.");
             return ExitCode.INTERRUPTED;
         } finally {
             stopMode(mode, out);
@@ -70,10 +72,17 @@ public final class AwakeScheduler implements ExecutionScheduler {
     }
 
     private void printPlan(CliOptions options, TimeWindow window, WakefulnessMode mode, PrintStream out) {
+        if (options.getLogLevel() == LogLevel.QUIET) {
+            return;
+        }
         out.println("Mode: " + options.getMode().cliValue());
         out.println("Starts: " + DISPLAY_TIME.format(window.getStart()));
         out.println("Ends:   " + DISPLAY_TIME.format(window.getEnd()));
         out.println("Behavior: " + mode.description() + ".");
+        if (options.getLogLevel() == LogLevel.VERBOSE) {
+            out.println("Activity interval: " + options.getIntervalSeconds() + " seconds.");
+            out.println("Runtime platform: " + System.getProperty("os.name", "unknown") + ".");
+        }
     }
 
     private boolean waitForStart(TimeWindow window, CancellationToken cancellation)
@@ -131,6 +140,12 @@ public final class AwakeScheduler implements ExecutionScheduler {
             mode.stop();
         } catch (ModeException exception) {
             out.println("Mode cleanup error: " + exception.getMessage());
+        }
+    }
+
+    private static void log(CliOptions options, PrintStream out, LogLevel minimum, String message) {
+        if (options.getLogLevel().ordinal() >= minimum.ordinal()) {
+            out.println(message);
         }
     }
 }

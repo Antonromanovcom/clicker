@@ -12,7 +12,8 @@ import java.util.Set;
 
 public final class CliParser {
     private static final Set<String> VALUE_OPTIONS = Set.of(
-            "--mode", "--hours", "--from", "--until", "--target", "--interval", "--erase-after");
+            "--mode", "--hours", "--from", "--until", "--target", "--interval", "--erase-after",
+            "--log-level");
     private static final Set<String> FLAG_OPTIONS = Set.of("--no-inhibit", "--dry-run");
     private static final long MAX_ERASE_BATCH = 100;
     private static final DateTimeFormatter TIME_FORMAT =
@@ -40,11 +41,13 @@ public final class CliParser {
         boolean inhibitDisabled = values.containsKey("--no-inhibit");
         Long eraseAfter = parsePositiveLong(values.get("--erase-after"), "--erase-after");
         boolean dryRun = values.containsKey("--dry-run");
+        LogLevel logLevel = values.containsKey("--log-level")
+                ? LogLevel.fromCliValue(values.get("--log-level")) : LogLevel.NORMAL;
 
         validate(mode, hours, from, until, target, values.containsKey("--interval"),
                 inhibitDisabled, eraseAfter, dryRun);
         return ParseResult.run(new CliOptions(mode, hours, from, until, target, interval,
-                inhibitDisabled, eraseAfter, dryRun));
+                inhibitDisabled, eraseAfter, dryRun, logLevel));
     }
 
     private Map<String, String> collectValues(String[] args) throws CliException {

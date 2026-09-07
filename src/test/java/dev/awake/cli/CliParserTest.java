@@ -97,4 +97,14 @@ class CliParserTest {
                 "--mode", "activity", "--hours", "2", "--target", "/tmp/x",
                 "--erase-after", "101"}));
     }
+
+    @Test
+    void parsesLogLevelAndRejectsUnknownValue() throws Exception {
+        CliOptions options = parser.parse(new String[]{
+                "--mode", "inhibit", "--hours", "2", "--log-level", "verbose"}).getOptions();
+
+        assertEquals(LogLevel.VERBOSE, options.getLogLevel());
+        assertThrows(CliException.class, () -> parser.parse(new String[]{
+                "--mode", "inhibit", "--hours", "2", "--log-level", "noisy"}));
+    }
 }

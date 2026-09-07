@@ -82,8 +82,7 @@ final class MacOsTextEditActivityMode extends AbstractLifecycleMode {
     @Override
     public String description() {
         String erase = eraseAfter == null ? "no batch deletion" : "erase each batch of " + eraseAfter;
-        return "macOS TextEdit activity in an isolated temporary document for "
-                + requestedTarget + " (" + erase + ")";
+        return "macOS TextEdit activity in an isolated temporary document (" + erase + ")";
     }
 
     @Override

@@ -25,7 +25,7 @@ final class ActivityPlaceholderMode extends AbstractPlaceholderMode {
                 : "each batch of " + eraseAfter + " typed characters would be erased";
         return (dryRun ? "activity dry-run" : "activity placeholder")
                 + " for " + platform.name().toLowerCase()
-                + " targeting " + target + " every " + intervalSeconds + "s; "
+                + " using an isolated target every " + intervalSeconds + "s; "
                 + erasePolicy + "; no input is generated yet";
     }
 }
