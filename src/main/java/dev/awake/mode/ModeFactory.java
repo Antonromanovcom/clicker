@@ -20,9 +20,10 @@ public final class ModeFactory implements ModeProvider {
         if (options.getMode() == AwakeMode.INHIBIT) {
             return createInhibitMode(platform);
         }
-        WakefulnessMode activity = new ActivityPlaceholderMode(
-                platform, options.getTarget(), options.getIntervalSeconds(),
-                options.getEraseAfter(), options.isDryRun());
+        WakefulnessMode activity = options.isDryRun() || platform != Platform.MACOS
+                ? new ActivityPlaceholderMode(platform, options.getTarget(), options.getIntervalSeconds(),
+                        options.getEraseAfter(), options.isDryRun())
+                : new MacOsTextEditActivityMode(options.getTarget(), options.getEraseAfter());
         if (options.isDryRun() || options.isInhibitDisabled()) {
             return activity;
         }

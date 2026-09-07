@@ -50,7 +50,7 @@ public final class AwakeScheduler implements ExecutionScheduler {
 
             mode.start();
             out.println("Started: " + mode.description() + ".");
-            if (!waitActiveDuration(window.getActiveDuration(), cancellation)) {
+            if (!waitActiveDuration(window.getActiveDuration(), options.getIntervalSeconds(), mode, cancellation)) {
                 out.println("Stopped: interrupted by user.");
                 return ExitCode.INTERRUPTED;
             }
@@ -88,17 +88,28 @@ public final class AwakeScheduler implements ExecutionScheduler {
         return false;
     }
 
-    private boolean waitActiveDuration(Duration duration, CancellationToken cancellation)
-            throws InterruptedException {
+    private boolean waitActiveDuration(Duration duration, long intervalSeconds,
+                                       WakefulnessMode mode, CancellationToken cancellation)
+            throws InterruptedException, ModeException {
         long durationNanos = duration.toNanos();
+        long intervalNanos = Duration.ofSeconds(intervalSeconds).toNanos();
         long startedAt = monotonicClock.nanoTime();
+        long nextPulse = startedAt;
         while (!cancellation.isCancelled()) {
             long elapsed = monotonicClock.nanoTime() - startedAt;
             long remaining = durationNanos - elapsed;
             if (remaining <= 0) {
                 return true;
             }
-            sleeper.sleep(shorterOf(Duration.ofNanos(remaining), MAX_SLEEP_SLICE));
+            long now = monotonicClock.nanoTime();
+            if (now >= nextPulse) {
+                mode.pulse();
+                nextPulse = now + intervalNanos;
+            }
+            long untilPulse = Math.max(1, nextPulse - monotonicClock.nanoTime());
+            sleeper.sleep(shorterOf(
+                    shorterOf(Duration.ofNanos(remaining), Duration.ofNanos(untilPulse)),
+                    MAX_SLEEP_SLICE));
         }
         return false;
     }

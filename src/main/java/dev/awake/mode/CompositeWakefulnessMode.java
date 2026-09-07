@@ -55,4 +55,11 @@ final class CompositeWakefulnessMode extends AbstractLifecycleMode {
             throw failure;
         }
     }
+
+    @Override
+    public void pulse() throws ModeException {
+        for (WakefulnessMode mode : modes) {
+            mode.pulse();
+        }
+    }
 }

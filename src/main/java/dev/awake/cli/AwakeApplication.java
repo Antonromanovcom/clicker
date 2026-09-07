@@ -15,7 +15,7 @@ import dev.awake.mode.WakefulnessMode;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
-    public static final String VERSION = "0.5.0-SNAPSHOT";
+    public static final String VERSION = "0.6.0-SNAPSHOT";
     private static final DateTimeFormatter DISPLAY_TIME =
             DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss VV");
 
@@ -94,6 +94,6 @@ public final class AwakeApplication {
         out.println("  --help              Show this help and exit");
         out.println("  --version           Show version and exit");
         out.println();
-        out.println("Activity input is not implemented yet; its safety options are accepted for stage 6.");
+        out.println("Activity input currently supports macOS TextEdit; other platforms use a placeholder.");
     }
 }

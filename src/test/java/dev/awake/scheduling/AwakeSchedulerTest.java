@@ -35,17 +35,20 @@ class AwakeSchedulerTest {
         assertEquals(Duration.ofSeconds(3), time.totalSlept);
         assertEquals(1, mode.startCalls);
         assertEquals(1, mode.stopCalls);
+        assertEquals(1, mode.pulseCalls);
         assertTrue(bytes.toString(StandardCharsets.UTF_8).contains("planned time window completed"));
     }
 
     private static final class RecordingMode implements WakefulnessMode {
         private int startCalls;
         private int stopCalls;
+        private int pulseCalls;
         private boolean running;
 
         public String description() { return "recording placeholder"; }
         public void start() { startCalls++; running = true; }
         public void stop() { if (running) { stopCalls++; running = false; } }
+        public void pulse() { pulseCalls++; }
         public boolean isRunning() { return running; }
     }
 
