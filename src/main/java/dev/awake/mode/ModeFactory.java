@@ -18,9 +18,18 @@ public final class ModeFactory implements ModeProvider {
                     + System.getProperty("os.name", "unknown"));
         }
         if (options.getMode() == AwakeMode.INHIBIT) {
-            return new InhibitPlaceholderMode(platform);
+            switch (platform) {
+                case MACOS:
+                    return new MacOsInhibitMode();
+                case WINDOWS:
+                    return new WindowsInhibitMode();
+                case LINUX:
+                    return new LinuxInhibitMode();
+                default:
+                    throw new ModeException("Unsupported operating system: "
+                            + System.getProperty("os.name", "unknown"));
+            }
         }
         return new ActivityPlaceholderMode(platform, options.getTarget());
     }
 }
-

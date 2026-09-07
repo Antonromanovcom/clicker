@@ -14,7 +14,7 @@ import dev.awake.mode.WakefulnessMode;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
-    public static final String VERSION = "0.2.0-SNAPSHOT";
+    public static final String VERSION = "0.4.0-SNAPSHOT";
 
     private AwakeApplication() {
     }

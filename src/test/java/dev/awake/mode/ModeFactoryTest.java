@@ -1,6 +1,5 @@
 package dev.awake.mode;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -10,16 +9,11 @@ import org.junit.jupiter.api.Test;
 
 class ModeFactoryTest {
     @Test
-    void createsInhibitPlaceholderWithIdempotentStop() throws Exception {
+    void createsMacOsInhibitBackend() throws Exception {
         WakefulnessMode mode = factory("Mac OS X").create(options(
                 "--mode", "inhibit", "--hours", "1"));
 
-        assertFalse(mode.isRunning());
-        mode.start();
-        assertTrue(mode.isRunning());
-        mode.stop();
-        mode.stop();
-        assertFalse(mode.isRunning());
+        assertTrue(mode.description().contains("caffeinate"));
     }
 
     @Test
@@ -45,4 +39,3 @@ class ModeFactoryTest {
         return new CliParser().parse(args).getOptions();
     }
 }
-
