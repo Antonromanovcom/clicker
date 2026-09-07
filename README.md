@@ -32,11 +32,17 @@ java -jar target/awake.jar --mode inhibit --hours 4
 java -jar target/awake.jar --mode inhibit --until 23:30
 java -jar target/awake.jar --mode activity --hours 2 --target "/tmp/awake.txt"
 java -jar target/awake.jar --mode activity --from 20:00 --until 23:30 --target "/tmp/awake.txt" --interval 30
+java -jar target/awake.jar --mode activity --hours 4 --target "/tmp/awake.txt" --no-inhibit --erase-after 100
+java -jar target/awake.jar --mode activity --hours 1 --target "/tmp/awake.txt" --dry-run
 ```
 
 `--hours` принимает положительное целое число. Время задаётся в 24-часовом формате `HH:mm`. Параметр `--from` используется только вместе с `--until`. Для `activity` параметр `--target` обязателен.
 
 Если `--until` уже прошло сегодня, окончание переносится на следующий день. Если `--from` уже прошло, запуск переносится на следующий день. Пара `--from 20:00 --until 01:00` означает пятичасовое окно через полночь.
+
+В будущем режиме `activity` системный `inhibit` включается по умолчанию как страховка. `--no-inhibit` отключает его, а `--erase-after 100` задаёт удаление каждой сотни подтверждённо введённых символов. Пока ввод не реализован, эти параметры только валидируются и отображаются в плане. `--dry-run` печатает план и сразу завершается, гарантированно не запуская планировщик и системный inhibit.
+
+Подробные ограничения описаны в [ACTIVITY-SAFETY.md](ACTIVITY-SAFETY.md).
 
 ## Коды завершения
 

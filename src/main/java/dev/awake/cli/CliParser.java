@@ -12,7 +12,9 @@ import java.util.Set;
 
 public final class CliParser {
     private static final Set<String> VALUE_OPTIONS = Set.of(
-            "--mode", "--hours", "--from", "--until", "--target", "--interval");
+            "--mode", "--hours", "--from", "--until", "--target", "--interval", "--erase-after");
+    private static final Set<String> FLAG_OPTIONS = Set.of("--no-inhibit", "--dry-run");
+    private static final long MAX_ERASE_BATCH = 100;
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
 
@@ -35,9 +37,14 @@ public final class CliParser {
         Path target = parsePath(values.get("--target"));
         Long configuredInterval = parsePositiveLong(values.get("--interval"), "--interval");
         long interval = configuredInterval == null ? 60 : configuredInterval;
+        boolean inhibitDisabled = values.containsKey("--no-inhibit");
+        Long eraseAfter = parsePositiveLong(values.get("--erase-after"), "--erase-after");
+        boolean dryRun = values.containsKey("--dry-run");
 
-        validate(mode, hours, from, until, target, values.containsKey("--interval"));
-        return ParseResult.run(new CliOptions(mode, hours, from, until, target, interval));
+        validate(mode, hours, from, until, target, values.containsKey("--interval"),
+                inhibitDisabled, eraseAfter, dryRun);
+        return ParseResult.run(new CliOptions(mode, hours, from, until, target, interval,
+                inhibitDisabled, eraseAfter, dryRun));
     }
 
     private Map<String, String> collectValues(String[] args) throws CliException {
@@ -47,11 +54,15 @@ public final class CliParser {
             if ("--help".equals(name) || "--version".equals(name)) {
                 throw new CliException(name + " must be used on its own.");
             }
-            if (!VALUE_OPTIONS.contains(name)) {
+            if (!VALUE_OPTIONS.contains(name) && !FLAG_OPTIONS.contains(name)) {
                 throw new CliException("Unknown option '" + name + "'.");
             }
             if (values.containsKey(name)) {
                 throw new CliException("Option " + name + " was supplied more than once.");
+            }
+            if (FLAG_OPTIONS.contains(name)) {
+                values.put(name, "true");
+                continue;
             }
             if (++index >= args.length || args[index].startsWith("--")) {
                 throw new CliException("Option " + name + " requires a value.");
@@ -107,7 +118,8 @@ public final class CliParser {
     }
 
     private void validate(AwakeMode mode, Long hours, LocalTime from, LocalTime until,
-                          Path target, boolean intervalSupplied) throws CliException {
+                          Path target, boolean intervalSupplied, boolean inhibitDisabled,
+                          Long eraseAfter, boolean dryRun) throws CliException {
         if ((hours == null) == (until == null)) {
             throw new CliException("Specify exactly one of --hours or --until.");
         }
@@ -123,6 +135,11 @@ public final class CliParser {
         if (mode == AwakeMode.INHIBIT && intervalSupplied) {
             throw new CliException("--interval is only valid in activity mode.");
         }
+        if (mode == AwakeMode.INHIBIT && (inhibitDisabled || eraseAfter != null || dryRun)) {
+            throw new CliException("--no-inhibit, --erase-after and --dry-run are only valid in activity mode.");
+        }
+        if (eraseAfter != null && eraseAfter > MAX_ERASE_BATCH) {
+            throw new CliException("--erase-after must not exceed " + MAX_ERASE_BATCH + ".");
+        }
     }
 }
-

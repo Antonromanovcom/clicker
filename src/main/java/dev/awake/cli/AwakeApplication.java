@@ -2,6 +2,7 @@ package dev.awake.cli;
 
 import java.io.PrintStream;
 import java.time.Clock;
+import java.time.format.DateTimeFormatter;
 import dev.awake.scheduling.AwakeScheduler;
 import dev.awake.scheduling.ExecutionScheduler;
 import dev.awake.scheduling.TimeWindow;
@@ -14,7 +15,9 @@ import dev.awake.mode.WakefulnessMode;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
-    public static final String VERSION = "0.4.0-SNAPSHOT";
+    public static final String VERSION = "0.5.0-SNAPSHOT";
+    private static final DateTimeFormatter DISPLAY_TIME =
+            DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss VV");
 
     private AwakeApplication() {
     }
@@ -51,6 +54,10 @@ public final class AwakeApplication {
             TimeWindow window = new TimeWindowResolver(clock).resolve(options);
             WakefulnessMode mode = modeProvider.create(options);
             out.println("Awake " + VERSION);
+            if (options.isDryRun()) {
+                printDryRun(window, mode, out);
+                return ExitCode.SUCCESS;
+            }
             return scheduler.execute(options, window, mode, out);
         } catch (CliException exception) {
             err.println("Error: " + exception.getMessage());
@@ -60,6 +67,13 @@ public final class AwakeApplication {
             err.println("Platform error: " + exception.getMessage());
             return ExitCode.PLATFORM_ERROR;
         }
+    }
+
+    private static void printDryRun(TimeWindow window, WakefulnessMode mode, PrintStream out) {
+        out.println("Dry-run: no scheduler, system inhibit, file access, or input will be started.");
+        out.println("Starts: " + DISPLAY_TIME.format(window.getStart()));
+        out.println("Ends:   " + DISPLAY_TIME.format(window.getEnd()));
+        out.println("Plan:   " + mode.description() + ".");
     }
 
     private static void printHelp(PrintStream out) {
@@ -74,9 +88,12 @@ public final class AwakeApplication {
         out.println("  --until <HH:mm>     End at local time in 24-hour format");
         out.println("  --target <path>     Required for activity; forbidden for inhibit");
         out.println("  --interval <sec>    Activity interval in seconds (default: 60)");
+        out.println("  --no-inhibit        Activity: do not also block system sleep");
+        out.println("  --erase-after <N>   Activity: erase each batch of N typed characters (max: 100)");
+        out.println("  --dry-run           Activity: validate and report actions without system effects");
         out.println("  --help              Show this help and exit");
         out.println("  --version           Show version and exit");
         out.println();
-        out.println("The inhibit and activity behaviors are not implemented yet.");
+        out.println("Activity input is not implemented yet; its safety options are accepted for stage 6.");
     }
 }

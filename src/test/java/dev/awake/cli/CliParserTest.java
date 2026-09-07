@@ -77,5 +77,24 @@ class CliParserTest {
         assertThrows(CliException.class,
                 () -> parser.parse(new String[]{"--mode", "inhibit", "--mode", "activity", "--hours", "2"}));
     }
-}
 
+    @Test
+    void parsesActivitySafetyOptions() throws Exception {
+        CliOptions options = parser.parse(new String[]{
+                "--mode", "activity", "--hours", "2", "--target", "/tmp/awake.txt",
+                "--no-inhibit", "--erase-after", "100", "--dry-run"}).getOptions();
+
+        assertEquals(true, options.isInhibitDisabled());
+        assertEquals(100L, options.getEraseAfter());
+        assertEquals(true, options.isDryRun());
+    }
+
+    @Test
+    void rejectsActivityOptionsInInhibitModeAndOversizedEraseBatch() {
+        assertThrows(CliException.class, () -> parser.parse(new String[]{
+                "--mode", "inhibit", "--hours", "2", "--no-inhibit"}));
+        assertThrows(CliException.class, () -> parser.parse(new String[]{
+                "--mode", "activity", "--hours", "2", "--target", "/tmp/x",
+                "--erase-after", "101"}));
+    }
+}

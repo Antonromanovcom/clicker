@@ -29,6 +29,16 @@ class AwakeApplicationTest {
         assertTrue(output.stderr.contains("requires --target"));
     }
 
+    @Test
+    void dryRunPrintsPlanWithoutStartingScheduler() {
+        Output output = run("--mode", "activity", "--hours", "1",
+                "--target", "/tmp/awake.txt", "--erase-after", "100", "--dry-run");
+
+        assertEquals(ExitCode.SUCCESS, output.code);
+        assertTrue(output.stdout.contains("Dry-run: no scheduler"));
+        assertTrue(!output.stdout.contains("Scheduler accepted"));
+    }
+
     private Output run(String... args) {
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
         ByteArrayOutputStream stderr = new ByteArrayOutputStream();
