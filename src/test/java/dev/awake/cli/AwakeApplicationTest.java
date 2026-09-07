@@ -10,6 +10,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
+import dev.awake.mode.WakefulnessMode;
 
 class AwakeApplicationTest {
     @Test
@@ -37,11 +38,19 @@ class AwakeApplicationTest {
                 new PrintStream(stdout, true, StandardCharsets.UTF_8),
                 new PrintStream(stderr, true, StandardCharsets.UTF_8),
                 clock,
-                (options, window, out) -> {
+                (options, window, mode, out) -> {
                     out.println("Scheduler accepted " + window.getActiveDuration());
                     return ExitCode.SUCCESS;
-                });
+                },
+                options -> new TestMode());
         return new Output(code, stdout.toString(StandardCharsets.UTF_8), stderr.toString(StandardCharsets.UTF_8));
+    }
+
+    private static final class TestMode implements WakefulnessMode {
+        public String description() { return "test mode"; }
+        public void start() { }
+        public void stop() { }
+        public boolean isRunning() { return false; }
     }
 
     private static final class Output {

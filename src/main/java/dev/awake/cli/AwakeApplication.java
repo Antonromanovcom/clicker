@@ -6,6 +6,11 @@ import dev.awake.scheduling.AwakeScheduler;
 import dev.awake.scheduling.ExecutionScheduler;
 import dev.awake.scheduling.TimeWindow;
 import dev.awake.scheduling.TimeWindowResolver;
+import dev.awake.mode.ModeException;
+import dev.awake.mode.ModeFactory;
+import dev.awake.mode.ModeProvider;
+import dev.awake.mode.PlatformDetector;
+import dev.awake.mode.WakefulnessMode;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
@@ -16,7 +21,8 @@ public final class AwakeApplication {
 
     public static void main(String[] args) {
         Clock clock = Clock.systemDefaultZone();
-        int exitCode = run(args, System.out, System.err, clock, new AwakeScheduler(clock));
+        int exitCode = run(args, System.out, System.err, clock, new AwakeScheduler(clock),
+                new ModeFactory(new PlatformDetector()));
         if (exitCode != ExitCode.SUCCESS) {
             System.exit(exitCode);
         }
@@ -24,11 +30,12 @@ public final class AwakeApplication {
 
     static int run(String[] args, PrintStream out, PrintStream err) {
         Clock clock = Clock.systemDefaultZone();
-        return run(args, out, err, clock, new AwakeScheduler(clock));
+        return run(args, out, err, clock, new AwakeScheduler(clock),
+                new ModeFactory(new PlatformDetector()));
     }
 
     static int run(String[] args, PrintStream out, PrintStream err,
-                   Clock clock, ExecutionScheduler scheduler) {
+                   Clock clock, ExecutionScheduler scheduler, ModeProvider modeProvider) {
         try {
             ParseResult result = new CliParser().parse(args);
             if (result.getAction() == ParseResult.Action.HELP) {
@@ -42,12 +49,16 @@ public final class AwakeApplication {
 
             CliOptions options = result.getOptions();
             TimeWindow window = new TimeWindowResolver(clock).resolve(options);
+            WakefulnessMode mode = modeProvider.create(options);
             out.println("Awake " + VERSION);
-            return scheduler.execute(options, window, out);
+            return scheduler.execute(options, window, mode, out);
         } catch (CliException exception) {
             err.println("Error: " + exception.getMessage());
             err.println("Run with --help for usage.");
             return ExitCode.INVALID_ARGUMENTS;
+        } catch (ModeException exception) {
+            err.println("Platform error: " + exception.getMessage());
+            return ExitCode.PLATFORM_ERROR;
         }
     }
 

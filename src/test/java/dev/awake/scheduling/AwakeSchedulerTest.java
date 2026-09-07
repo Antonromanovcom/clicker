@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
+import dev.awake.mode.WakefulnessMode;
 
 class AwakeSchedulerTest {
     @Test
@@ -26,12 +27,26 @@ class AwakeSchedulerTest {
                 Instant.parse("2026-09-06T08:00:03Z").atZone(ZoneOffset.UTC));
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
-        int result = scheduler.execute(options(), window,
+        RecordingMode mode = new RecordingMode();
+        int result = scheduler.execute(options(), window, mode,
                 new PrintStream(bytes, true, StandardCharsets.UTF_8));
 
         assertEquals(ExitCode.SUCCESS, result);
         assertEquals(Duration.ofSeconds(3), time.totalSlept);
+        assertEquals(1, mode.startCalls);
+        assertEquals(1, mode.stopCalls);
         assertTrue(bytes.toString(StandardCharsets.UTF_8).contains("planned time window completed"));
+    }
+
+    private static final class RecordingMode implements WakefulnessMode {
+        private int startCalls;
+        private int stopCalls;
+        private boolean running;
+
+        public String description() { return "recording placeholder"; }
+        public void start() { startCalls++; running = true; }
+        public void stop() { if (running) { stopCalls++; running = false; } }
+        public boolean isRunning() { return running; }
     }
 
     private CliOptions options() throws Exception {
@@ -81,4 +96,3 @@ class AwakeSchedulerTest {
         }
     }
 }
-

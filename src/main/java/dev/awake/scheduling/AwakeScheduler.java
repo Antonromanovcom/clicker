@@ -2,12 +2,13 @@ package dev.awake.scheduling;
 
 import dev.awake.cli.CliOptions;
 import dev.awake.cli.ExitCode;
+import dev.awake.mode.ModeException;
+import dev.awake.mode.WakefulnessMode;
 import java.io.PrintStream;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
 
 public final class AwakeScheduler implements ExecutionScheduler {
     private static final Duration MAX_SLEEP_SLICE = Duration.ofMillis(250);
@@ -32,41 +33,47 @@ public final class AwakeScheduler implements ExecutionScheduler {
     }
 
     @Override
-    public int execute(CliOptions options, TimeWindow window, PrintStream out) {
+    public int execute(CliOptions options, TimeWindow window, WakefulnessMode mode, PrintStream out) {
         CancellationToken cancellation = new CancellationToken();
         Thread shutdownHook = new Thread(() -> {
             cancellation.cancel();
+            stopMode(mode, out);
             out.println("Stopped: JVM shutdown requested (for example, Ctrl+C).");
         }, "awake-shutdown");
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         try {
-            printPlan(options, window, out);
+            printPlan(options, window, mode, out);
             if (!waitForStart(window, cancellation)) {
                 out.println("Stopped before start: interrupted by user.");
                 return ExitCode.INTERRUPTED;
             }
 
-            out.println("Started: " + options.getMode().cliValue() + " mode placeholder.");
+            mode.start();
+            out.println("Started: " + mode.description() + ".");
             if (!waitActiveDuration(window.getActiveDuration(), cancellation)) {
                 out.println("Stopped: interrupted by user.");
                 return ExitCode.INTERRUPTED;
             }
             out.println("Finished: planned time window completed.");
             return ExitCode.SUCCESS;
+        } catch (ModeException exception) {
+            out.println("Mode error: " + exception.getMessage());
+            return ExitCode.PLATFORM_ERROR;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             out.println("Stopped: thread interrupted.");
             return ExitCode.INTERRUPTED;
         } finally {
+            stopMode(mode, out);
             removeShutdownHook(shutdownHook);
         }
     }
 
-    private void printPlan(CliOptions options, TimeWindow window, PrintStream out) {
+    private void printPlan(CliOptions options, TimeWindow window, WakefulnessMode mode, PrintStream out) {
         out.println("Mode: " + options.getMode().cliValue());
         out.println("Starts: " + DISPLAY_TIME.format(window.getStart()));
         out.println("Ends:   " + DISPLAY_TIME.format(window.getEnd()));
-        out.println("Behavior: placeholder only; no sleep prevention or input emulation is active.");
+        out.println("Behavior: " + mode.description() + ".");
     }
 
     private boolean waitForStart(TimeWindow window, CancellationToken cancellation)
@@ -105,6 +112,14 @@ public final class AwakeScheduler implements ExecutionScheduler {
             Runtime.getRuntime().removeShutdownHook(hook);
         } catch (IllegalStateException ignored) {
             // The JVM is already shutting down and is executing the hook.
+        }
+    }
+
+    private static void stopMode(WakefulnessMode mode, PrintStream out) {
+        try {
+            mode.stop();
+        } catch (ModeException exception) {
+            out.println("Mode cleanup error: " + exception.getMessage());
         }
     }
 }
