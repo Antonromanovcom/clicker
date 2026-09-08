@@ -110,6 +110,18 @@ class CliParserTest {
     }
 
     @Test
+    void parsesDisplayAwakeAndRejectsConflictWithNoInhibit() throws Exception {
+        CliOptions options = parser.parse(new String[]{
+                "--mode", "activity", "--hours", "2", "--target", "/tmp/x",
+                "--keep-display-awake"}).getOptions();
+
+        assertEquals(true, options.isDisplayAwake());
+        assertThrows(CliException.class, () -> parser.parse(new String[]{
+                "--mode", "activity", "--hours", "2", "--target", "/tmp/x",
+                "--keep-display-awake", "--no-inhibit"}));
+    }
+
+    @Test
     void parsesLogLevelAndRejectsUnknownValue() throws Exception {
         CliOptions options = parser.parse(new String[]{
                 "--mode", "inhibit", "--hours", "2", "--log-level", "verbose"}).getOptions();

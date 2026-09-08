@@ -31,6 +31,18 @@ class WindowsInhibitModeTest {
         assertThrows(ModeException.class, mode::start);
     }
 
+    @Test
+    void optionallyKeepsDisplayAwake() throws Exception {
+        RecordingKernel32 api = new RecordingKernel32(1);
+        WindowsInhibitMode mode = new WindowsInhibitMode(api, true);
+
+        mode.start();
+        mode.stop();
+
+        assertEquals(List.of(0x80000003, 0x80000000), api.flags);
+        assertTrue(mode.description().contains("system and display kept awake"));
+    }
+
     private static final class RecordingKernel32 implements WindowsInhibitMode.Kernel32 {
         private final int result;
         private final List<Integer> flags = new ArrayList<>();
@@ -48,4 +60,3 @@ class WindowsInhibitModeTest {
         }
     }
 }
-

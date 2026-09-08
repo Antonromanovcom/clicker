@@ -43,6 +43,8 @@ java -jar target/awake.jar --mode inhibit --hours 4 --log-level quiet
 
 В режиме `activity` системный `inhibit` включается по умолчанию как страховка. `--no-inhibit` отключает его, `--keypress-interval 30` задаёт 30 секунд между вводами, а `--erase-after 1000` — удаление каждой тысячи подтверждённо введённых символов. Старый ключ `--interval` остаётся совместимым псевдонимом. `--dry-run` печатает план и сразу завершается, гарантированно не запуская планировщик и системный inhibit.
 
+На Windows ключ `--keep-display-awake` дополнительно не даёт выключиться дисплею и запуститься скринсейверу. Без него блокируется только автоматический сон системы. Этот ключ нельзя сочетать с `--no-inhibit`.
+
 ### Activity на macOS
 
 - Поддерживается редактор TextEdit.
@@ -59,7 +61,7 @@ java -jar target/awake.jar --mode inhibit --hours 4 --log-level quiet
 ```powershell
 java -jar target/awake.jar --mode activity --from 15:00 --until 16:00 `
   --target "C:\Windows\System32\notepad.exe" `
-  --keypress-interval 30 --erase-after 1000
+  --keypress-interval 30 --erase-after 1000 --keep-display-awake
 ```
 
 Awake запускает отдельный Notepad со своим временным файлом, проверяет PID активного окна перед вводом, сохраняет и сверяет временный файл после каждого действия. Другие редакторы на Windows пока намеренно не принимаются.

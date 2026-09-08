@@ -14,7 +14,8 @@ public final class CliParser {
     private static final Set<String> VALUE_OPTIONS = Set.of(
             "--mode", "--hours", "--from", "--until", "--target", "--keypress-interval", "--interval", "--erase-after",
             "--log-level");
-    private static final Set<String> FLAG_OPTIONS = Set.of("--no-inhibit", "--dry-run");
+    private static final Set<String> FLAG_OPTIONS = Set.of(
+            "--no-inhibit", "--keep-display-awake", "--dry-run");
     private static final long MAX_ERASE_BATCH = 1_000;
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
@@ -43,6 +44,7 @@ public final class CliParser {
         Long configuredInterval = parsePositiveLong(values.get(intervalOption), intervalOption);
         long interval = configuredInterval == null ? 60 : configuredInterval;
         boolean inhibitDisabled = values.containsKey("--no-inhibit");
+        boolean displayAwake = values.containsKey("--keep-display-awake");
         Long eraseAfter = parsePositiveLong(values.get("--erase-after"), "--erase-after");
         boolean dryRun = values.containsKey("--dry-run");
         LogLevel logLevel = values.containsKey("--log-level")
@@ -50,9 +52,9 @@ public final class CliParser {
 
         validate(mode, hours, from, until, target,
                 values.containsKey("--keypress-interval") || values.containsKey("--interval"),
-                inhibitDisabled, eraseAfter, dryRun);
+                inhibitDisabled, displayAwake, eraseAfter, dryRun);
         return ParseResult.run(new CliOptions(mode, hours, from, until, target, interval,
-                inhibitDisabled, eraseAfter, dryRun, logLevel));
+                inhibitDisabled, displayAwake, eraseAfter, dryRun, logLevel));
     }
 
     private Map<String, String> collectValues(String[] args) throws CliException {
@@ -127,7 +129,7 @@ public final class CliParser {
 
     private void validate(AwakeMode mode, Long hours, LocalTime from, LocalTime until,
                           Path target, boolean intervalSupplied, boolean inhibitDisabled,
-                          Long eraseAfter, boolean dryRun) throws CliException {
+                          boolean displayAwake, Long eraseAfter, boolean dryRun) throws CliException {
         if ((hours == null) == (until == null)) {
             throw new CliException("Specify exactly one of --hours or --until.");
         }
@@ -145,6 +147,9 @@ public final class CliParser {
         }
         if (mode == AwakeMode.INHIBIT && (inhibitDisabled || eraseAfter != null || dryRun)) {
             throw new CliException("--no-inhibit, --erase-after and --dry-run are only valid in activity mode.");
+        }
+        if (inhibitDisabled && displayAwake) {
+            throw new CliException("--keep-display-awake cannot be combined with --no-inhibit.");
         }
         if (eraseAfter != null && eraseAfter > MAX_ERASE_BATCH) {
             throw new CliException("--erase-after must not exceed " + MAX_ERASE_BATCH + ".");

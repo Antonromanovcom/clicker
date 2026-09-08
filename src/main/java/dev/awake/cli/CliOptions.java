@@ -11,13 +11,14 @@ public final class CliOptions {
     private final Path target;
     private final long intervalSeconds;
     private final boolean inhibitDisabled;
+    private final boolean displayAwake;
     private final Long eraseAfter;
     private final boolean dryRun;
     private final LogLevel logLevel;
 
     CliOptions(AwakeMode mode, Long hours, LocalTime from, LocalTime until,
                Path target, long intervalSeconds, boolean inhibitDisabled,
-               Long eraseAfter, boolean dryRun, LogLevel logLevel) {
+               boolean displayAwake, Long eraseAfter, boolean dryRun, LogLevel logLevel) {
         this.mode = mode;
         this.hours = hours;
         this.from = from;
@@ -25,6 +26,7 @@ public final class CliOptions {
         this.target = target;
         this.intervalSeconds = intervalSeconds;
         this.inhibitDisabled = inhibitDisabled;
+        this.displayAwake = displayAwake;
         this.eraseAfter = eraseAfter;
         this.dryRun = dryRun;
         this.logLevel = logLevel;
@@ -56,6 +58,10 @@ public final class CliOptions {
 
     public boolean isInhibitDisabled() {
         return inhibitDisabled;
+    }
+
+    public boolean isDisplayAwake() {
+        return displayAwake;
     }
 
     public Long getEraseAfter() {

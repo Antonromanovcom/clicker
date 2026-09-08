@@ -9,24 +9,37 @@ import java.util.concurrent.atomic.AtomicReference;
 final class WindowsInhibitMode extends AbstractLifecycleMode {
     private static final int ES_CONTINUOUS = 0x80000000;
     private static final int ES_SYSTEM_REQUIRED = 0x00000001;
+    private static final int ES_DISPLAY_REQUIRED = 0x00000002;
     private static final long TIMEOUT_SECONDS = 5;
 
     private final Kernel32 kernel32;
+    private final boolean displayAwake;
     private CountDownLatch stopRequested;
     private Thread ownerThread;
     private AtomicReference<ModeException> failure;
 
     WindowsInhibitMode() {
-        this(Native.load("kernel32", Kernel32.class));
+        this(false);
+    }
+
+    WindowsInhibitMode(boolean displayAwake) {
+        this(Native.load("kernel32", Kernel32.class), displayAwake);
     }
 
     WindowsInhibitMode(Kernel32 kernel32) {
+        this(kernel32, false);
+    }
+
+    WindowsInhibitMode(Kernel32 kernel32, boolean displayAwake) {
         this.kernel32 = kernel32;
+        this.displayAwake = displayAwake;
     }
 
     @Override
     public String description() {
-        return "Windows SetThreadExecutionState (display sleep remains enabled)";
+        return displayAwake
+                ? "Windows SetThreadExecutionState (system and display kept awake)"
+                : "Windows SetThreadExecutionState (display sleep remains enabled)";
     }
 
     @Override
@@ -54,7 +67,9 @@ final class WindowsInhibitMode extends AbstractLifecycleMode {
     private void runAssertion(CountDownLatch startupFinished) {
         boolean assertionSet = false;
         try {
-            assertionSet = kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED) != 0;
+            int requirements = ES_CONTINUOUS | ES_SYSTEM_REQUIRED;
+            if (displayAwake) requirements |= ES_DISPLAY_REQUIRED;
+            assertionSet = kernel32.SetThreadExecutionState(requirements) != 0;
             if (!assertionSet) {
                 failure.set(new ModeException("Windows rejected SetThreadExecutionState."));
                 return;
@@ -104,4 +119,3 @@ final class WindowsInhibitMode extends AbstractLifecycleMode {
         int SetThreadExecutionState(int executionState);
     }
 }
-

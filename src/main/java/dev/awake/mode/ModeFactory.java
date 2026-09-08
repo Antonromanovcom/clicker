@@ -18,7 +18,7 @@ public final class ModeFactory implements ModeProvider {
                     + System.getProperty("os.name", "unknown"));
         }
         if (options.getMode() == AwakeMode.INHIBIT) {
-            return createInhibitMode(platform);
+            return createInhibitMode(platform, options.isDisplayAwake());
         }
         WakefulnessMode activity = createActivityMode(platform, options);
         if (!options.isDryRun()) {
@@ -27,7 +27,7 @@ public final class ModeFactory implements ModeProvider {
         if (options.isDryRun() || options.isInhibitDisabled()) {
             return activity;
         }
-        return new CompositeWakefulnessMode(createInhibitMode(platform), activity);
+        return new CompositeWakefulnessMode(createInhibitMode(platform, options.isDisplayAwake()), activity);
     }
 
     private WakefulnessMode createActivityMode(Platform platform, CliOptions options) {
@@ -48,12 +48,15 @@ public final class ModeFactory implements ModeProvider {
         }
     }
 
-    private WakefulnessMode createInhibitMode(Platform platform) throws ModeException {
+    private WakefulnessMode createInhibitMode(Platform platform, boolean displayAwake) throws ModeException {
+        if (displayAwake && platform != Platform.WINDOWS) {
+            throw new ModeException("--keep-display-awake is currently supported only on Windows.");
+        }
         switch (platform) {
             case MACOS:
                 return new MacOsInhibitMode();
             case WINDOWS:
-                return new WindowsInhibitMode();
+                return new WindowsInhibitMode(displayAwake);
             case LINUX:
                 return new LinuxInhibitMode();
             default:
