@@ -6,7 +6,7 @@
 
     <groupId>dev.awake</groupId>
     <artifactId>awake</artifactId>
-    <version>0.7.2-SNAPSHOT</version>
+    <version>0.7.3-SNAPSHOT</version>
     <name>Awake</name>
 
     <properties>

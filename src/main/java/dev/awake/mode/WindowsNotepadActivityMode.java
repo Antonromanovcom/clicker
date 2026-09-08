@@ -36,6 +36,7 @@ final class WindowsNotepadActivityMode extends AbstractLifecycleMode {
     private final Path notepadExecutable;
     private final Long eraseAfter;
     private Path temporaryFile;
+    private Path pulseScript;
     private Process notepad;
     private int confirmedCharacters;
 
@@ -55,6 +56,8 @@ final class WindowsNotepadActivityMode extends AbstractLifecycleMode {
         validateExecutable();
         try {
             temporaryFile = Files.createTempFile("awake-activity-", ".txt");
+            pulseScript = Files.createTempFile("awake-activity-", ".ps1");
+            Files.writeString(pulseScript, PULSE_SCRIPT, StandardCharsets.UTF_8);
             notepad = new ProcessBuilder(notepadExecutable.toString(), temporaryFile.toString()).start();
             long deadline = System.nanoTime() + Duration.ofSeconds(8).toNanos();
             while (System.nanoTime() < deadline && notepad.isAlive()) {
@@ -80,7 +83,7 @@ final class WindowsNotepadActivityMode extends AbstractLifecycleMode {
         }
         String result = run(List.of(
                 "powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
-                "-Command", PULSE_SCRIPT,
+                "-File", pulseScript.toString(),
                 Long.toString(notepad.pid()), temporaryFile.toString(),
                 Integer.toString(confirmedCharacters), eraseAfter == null ? "0" : eraseAfter.toString()));
         try {
@@ -105,12 +108,14 @@ final class WindowsNotepadActivityMode extends AbstractLifecycleMode {
         }
         try {
             if (temporaryFile != null) Files.deleteIfExists(temporaryFile);
+            if (pulseScript != null) Files.deleteIfExists(pulseScript);
         } catch (IOException exception) {
-            ModeException deletion = new ModeException("Could not delete the Windows activity temporary file.", exception);
+            ModeException deletion = new ModeException("Could not delete a Windows activity temporary file.", exception);
             if (failure == null) failure = deletion; else failure.addSuppressed(deletion);
         } finally {
             notepad = null;
             temporaryFile = null;
+            pulseScript = null;
             confirmedCharacters = 0;
         }
         if (failure != null) throw failure;

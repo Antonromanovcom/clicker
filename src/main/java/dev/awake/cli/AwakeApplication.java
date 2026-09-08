@@ -15,7 +15,7 @@ import dev.awake.mode.WakefulnessMode;
 
 /** Entry point for the Awake command-line application. */
 public final class AwakeApplication {
-    public static final String VERSION = "0.7.2-SNAPSHOT";
+    public static final String VERSION = "0.7.3-SNAPSHOT";
     private static final DateTimeFormatter DISPLAY_TIME =
             DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss VV");
 
