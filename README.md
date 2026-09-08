@@ -31,8 +31,8 @@ java -jar target/awake.jar --help
 java -jar target/awake.jar --mode inhibit --hours 4
 java -jar target/awake.jar --mode inhibit --until 23:30
 java -jar target/awake.jar --mode activity --hours 2 --target "/tmp/awake.txt"
-java -jar target/awake.jar --mode activity --from 20:00 --until 23:30 --target "/tmp/awake.txt" --interval 30
-java -jar target/awake.jar --mode activity --hours 4 --target "/tmp/awake.txt" --no-inhibit --erase-after 100
+java -jar target/awake.jar --mode activity --from 20:00 --until 23:30 --target "/tmp/awake.txt" --keypress-interval 30
+java -jar target/awake.jar --mode activity --hours 4 --target "/tmp/awake.txt" --no-inhibit --erase-after 1000
 java -jar target/awake.jar --mode activity --hours 1 --target "/tmp/awake.txt" --dry-run
 java -jar target/awake.jar --mode inhibit --hours 4 --log-level quiet
 ```
@@ -41,7 +41,7 @@ java -jar target/awake.jar --mode inhibit --hours 4 --log-level quiet
 
 Если `--until` уже прошло сегодня, окончание переносится на следующий день. Если `--from` уже прошло, запуск переносится на следующий день. Пара `--from 20:00 --until 01:00` означает пятичасовое окно через полночь.
 
-В режиме `activity` системный `inhibit` включается по умолчанию как страховка. `--no-inhibit` отключает его, а `--erase-after 100` задаёт удаление каждой сотни подтверждённо введённых символов. `--dry-run` печатает план и сразу завершается, гарантированно не запуская планировщик и системный inhibit.
+В режиме `activity` системный `inhibit` включается по умолчанию как страховка. `--no-inhibit` отключает его, `--keypress-interval 30` задаёт 30 секунд между вводами, а `--erase-after 1000` — удаление каждой тысячи подтверждённо введённых символов. Старый ключ `--interval` остаётся совместимым псевдонимом. `--dry-run` печатает план и сразу завершается, гарантированно не запуская планировщик и системный inhibit.
 
 ### Activity на macOS
 
@@ -57,8 +57,9 @@ java -jar target/awake.jar --mode inhibit --hours 4 --log-level quiet
 Укажите полный путь до `notepad.exe`, обычно:
 
 ```powershell
-java -jar target/awake.jar --mode activity --hours 4 `
-  --target "C:\Windows\System32\notepad.exe" --no-inhibit --erase-after 100
+java -jar target/awake.jar --mode activity --from 15:00 --until 16:00 `
+  --target "C:\Windows\System32\notepad.exe" `
+  --keypress-interval 30 --erase-after 1000
 ```
 
 Awake запускает отдельный Notepad со своим временным файлом, проверяет PID активного окна перед вводом, сохраняет и сверяет временный файл после каждого действия. Другие редакторы на Windows пока намеренно не принимаются.

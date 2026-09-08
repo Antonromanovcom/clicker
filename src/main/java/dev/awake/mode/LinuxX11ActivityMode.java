@@ -75,9 +75,8 @@ final class LinuxX11ActivityMode extends AbstractLifecycleMode {
             waitForLength(confirmedCharacters + 1);
             confirmedCharacters++;
             if (eraseAfter != null && confirmedCharacters == eraseAfter) {
-                for (int index = 0; index < confirmedCharacters; index++) {
-                    run(List.of("xdotool", "key", "--window", windowId, "BackSpace"));
-                }
+                run(List.of("xdotool", "key", "--window", windowId,
+                        "--repeat", Integer.toString(confirmedCharacters), "--delay", "0", "BackSpace"));
                 run(List.of("xdotool", "key", "--window", windowId, "ctrl+s"));
                 waitForLength(0);
                 confirmedCharacters = 0;

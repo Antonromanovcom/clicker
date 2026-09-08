@@ -12,10 +12,10 @@ import java.util.Set;
 
 public final class CliParser {
     private static final Set<String> VALUE_OPTIONS = Set.of(
-            "--mode", "--hours", "--from", "--until", "--target", "--interval", "--erase-after",
+            "--mode", "--hours", "--from", "--until", "--target", "--keypress-interval", "--interval", "--erase-after",
             "--log-level");
     private static final Set<String> FLAG_OPTIONS = Set.of("--no-inhibit", "--dry-run");
-    private static final long MAX_ERASE_BATCH = 100;
+    private static final long MAX_ERASE_BATCH = 1_000;
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
 
@@ -36,7 +36,11 @@ public final class CliParser {
         LocalTime from = parseTime(values.get("--from"), "--from");
         LocalTime until = parseTime(values.get("--until"), "--until");
         Path target = parsePath(values.get("--target"));
-        Long configuredInterval = parsePositiveLong(values.get("--interval"), "--interval");
+        if (values.containsKey("--keypress-interval") && values.containsKey("--interval")) {
+            throw new CliException("Use either --keypress-interval or its legacy alias --interval, not both.");
+        }
+        String intervalOption = values.containsKey("--keypress-interval") ? "--keypress-interval" : "--interval";
+        Long configuredInterval = parsePositiveLong(values.get(intervalOption), intervalOption);
         long interval = configuredInterval == null ? 60 : configuredInterval;
         boolean inhibitDisabled = values.containsKey("--no-inhibit");
         Long eraseAfter = parsePositiveLong(values.get("--erase-after"), "--erase-after");
@@ -44,7 +48,8 @@ public final class CliParser {
         LogLevel logLevel = values.containsKey("--log-level")
                 ? LogLevel.fromCliValue(values.get("--log-level")) : LogLevel.NORMAL;
 
-        validate(mode, hours, from, until, target, values.containsKey("--interval"),
+        validate(mode, hours, from, until, target,
+                values.containsKey("--keypress-interval") || values.containsKey("--interval"),
                 inhibitDisabled, eraseAfter, dryRun);
         return ParseResult.run(new CliOptions(mode, hours, from, until, target, interval,
                 inhibitDisabled, eraseAfter, dryRun, logLevel));
@@ -136,7 +141,7 @@ public final class CliParser {
             throw new CliException("--target is only valid in activity mode.");
         }
         if (mode == AwakeMode.INHIBIT && intervalSupplied) {
-            throw new CliException("--interval is only valid in activity mode.");
+            throw new CliException("--keypress-interval/--interval is only valid in activity mode.");
         }
         if (mode == AwakeMode.INHIBIT && (inhibitDisabled || eraseAfter != null || dryRun)) {
             throw new CliException("--no-inhibit, --erase-after and --dry-run are only valid in activity mode.");
