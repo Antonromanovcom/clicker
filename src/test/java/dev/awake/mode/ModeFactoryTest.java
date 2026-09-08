@@ -1,6 +1,7 @@
 package dev.awake.mode;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.awake.cli.CliOptions;
@@ -17,11 +18,11 @@ class ModeFactoryTest {
     }
 
     @Test
-    void createsActivityPlaceholder() throws Exception {
+    void createsLinuxActivityWithDefaultInhibit() throws Exception {
         WakefulnessMode mode = factory("Linux").create(options(
                 "--mode", "activity", "--hours", "1", "--target", "/tmp/awake.txt"));
 
-        assertTrue(mode.description().contains("activity placeholder"));
+        assertTrue(mode.description().contains("Linux X11"));
         assertTrue(mode.description().contains("systemd-inhibit"));
     }
 
@@ -32,7 +33,7 @@ class ModeFactoryTest {
                 "--no-inhibit", "--erase-after", "100"));
 
         assertTrue(mode.description().contains("batch of 100"));
-        assertTrue(!mode.description().contains("systemd-inhibit"));
+        assertFalse(mode.description().contains("systemd-inhibit"));
     }
 
     @Test
@@ -41,7 +42,25 @@ class ModeFactoryTest {
                 "--mode", "activity", "--hours", "1", "--target", "/tmp/awake.txt", "--dry-run"));
 
         assertTrue(mode.description().contains("activity dry-run"));
-        assertTrue(!mode.description().contains("caffeinate"));
+        assertFalse(mode.description().contains("caffeinate"));
+    }
+
+    @Test
+    void selectsWindowsNotepadAsPrimaryActivityBackend() throws Exception {
+        WakefulnessMode mode = factory("Windows 11").create(options(
+                "--mode", "activity", "--hours", "1",
+                "--target", "C:\\Windows\\System32\\notepad.exe", "--no-inhibit"));
+
+        assertTrue(mode.description().contains("Windows Notepad"));
+    }
+
+    @Test
+    void selectsLinuxX11ActivityBackend() throws Exception {
+        WakefulnessMode mode = factory("Linux").create(options(
+                "--mode", "activity", "--hours", "1",
+                "--target", "/usr/bin/gedit", "--no-inhibit"));
+
+        assertTrue(mode.description().contains("Linux X11"));
     }
 
     @Test

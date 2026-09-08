@@ -20,10 +20,7 @@ public final class ModeFactory implements ModeProvider {
         if (options.getMode() == AwakeMode.INHIBIT) {
             return createInhibitMode(platform);
         }
-        WakefulnessMode activity = options.isDryRun() || platform != Platform.MACOS
-                ? new ActivityPlaceholderMode(platform, options.getTarget(), options.getIntervalSeconds(),
-                        options.getEraseAfter(), options.isDryRun())
-                : new MacOsTextEditActivityMode(options.getTarget(), options.getEraseAfter());
+        WakefulnessMode activity = createActivityMode(platform, options);
         if (!options.isDryRun()) {
             activity = new TargetLockedMode(options.getTarget(), activity);
         }
@@ -31,6 +28,24 @@ public final class ModeFactory implements ModeProvider {
             return activity;
         }
         return new CompositeWakefulnessMode(createInhibitMode(platform), activity);
+    }
+
+    private WakefulnessMode createActivityMode(Platform platform, CliOptions options) {
+        if (options.isDryRun()) {
+            return new ActivityPlaceholderMode(platform, options.getTarget(), options.getIntervalSeconds(),
+                    options.getEraseAfter(), true);
+        }
+        switch (platform) {
+            case MACOS:
+                return new MacOsTextEditActivityMode(options.getTarget(), options.getEraseAfter());
+            case WINDOWS:
+                return new WindowsNotepadActivityMode(options.getTarget(), options.getEraseAfter());
+            case LINUX:
+                return new LinuxX11ActivityMode(options.getTarget(), options.getEraseAfter());
+            default:
+                return new ActivityPlaceholderMode(platform, options.getTarget(), options.getIntervalSeconds(),
+                        options.getEraseAfter(), false);
+        }
     }
 
     private WakefulnessMode createInhibitMode(Platform platform) throws ModeException {
