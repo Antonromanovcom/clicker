@@ -9,10 +9,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 final class WindowsNotepadActivityMode extends AbstractLifecycleMode {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration TIMEOUT = Duration.ofSeconds(20);
     private static final String PULSE_SCRIPT =
             "$ErrorActionPreference='Stop';"
             + "$pidExpected=[int]$args[0];$file=$args[1];$expected=[int]$args[2];$erase=[int]$args[3];"
+            + "function Wait-AwakeFile{param([int]$length,[bool]$mustEndX,[string]$failure);"
+            + "$deadline=[DateTime]::UtcNow.AddSeconds(5);do{Start-Sleep -Milliseconds 50;"
+            + "try{$content=[IO.File]::ReadAllText($file);"
+            + "if($content.Length -eq $length -and (-not $mustEndX -or $content.EndsWith('x'))){return}}catch{}"
+            + "}while([DateTime]::UtcNow -lt $deadline);throw $failure};"
             + "Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;public static class AwakeUser32{"
             + "[DllImport(\"user32.dll\")]public static extern IntPtr GetForegroundWindow();"
             + "[DllImport(\"user32.dll\")]public static extern uint GetWindowThreadProcessId(IntPtr h,out uint p);"
@@ -26,11 +31,13 @@ final class WindowsNotepadActivityMode extends AbstractLifecycleMode {
             + "[void][AwakeUser32]::GetWindowThreadProcessId($current,[ref]$frontPid);"
             + "if($frontPid -ne $pidExpected){throw 'Foreground process verification failed'};"
             + "$before=[IO.File]::ReadAllText($file);if($before.Length -ne $expected){throw 'Temporary file changed unexpectedly'};"
-            + "$shell.SendKeys('^{END}x^s');Start-Sleep -Milliseconds 250;"
-            + "$after=[IO.File]::ReadAllText($file);if($after.Length -ne ($expected+1) -or -not $after.EndsWith('x')){throw 'Typed character was not confirmed'};"
+            + "$shell.SendKeys('^{END}');Start-Sleep -Milliseconds 50;$shell.SendKeys('x');"
+            + "Start-Sleep -Milliseconds 50;$shell.SendKeys('^s');"
+            + "Wait-AwakeFile ($expected+1) $true 'Typed character was not confirmed';"
             + "$newCount=$expected+1;if($erase -gt 0 -and $newCount -eq $erase){"
-            + "$keys=(('{BACKSPACE}'*$erase) -join '');$shell.SendKeys($keys+'^s');Start-Sleep -Milliseconds 250;"
-            + "if(([IO.File]::ReadAllText($file)).Length -ne 0){throw 'Batch deletion was not confirmed'};$newCount=0};"
+            + "$keys=(('{BACKSPACE}'*$erase) -join '');$shell.SendKeys($keys);"
+            + "Start-Sleep -Milliseconds 50;$shell.SendKeys('^s');"
+            + "Wait-AwakeFile 0 $false 'Batch deletion was not confirmed';$newCount=0};"
             + "Write-Output $newCount}finally{if($previous -ne [IntPtr]::Zero){[void][AwakeUser32]::SetForegroundWindow($previous)}}";
 
     private final Path notepadExecutable;
